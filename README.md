@@ -50,6 +50,25 @@ Legacy developer runs may still have data in `.local/kanban_metrics.db`; the des
 
 For local debugging you can override the default host, port, and writable data directory with `KANBAN_METRICS_HOST`, `KANBAN_METRICS_PORT`, and `KANBAN_METRICS_DATA_DIR`.
 
+## macOS installer image
+
+To build a distributable macOS `.dmg` that contains the app bundle and an `Applications` shortcut:
+
+```bash
+./scripts/build_macos_dmg.sh
+```
+
+The installer image is created at `dist/Kanban Metrics.dmg`.
+
+## GitHub release flow
+
+Pushing a tag like `v0.1.0` triggers `.github/workflows/release.yml`, which:
+
+- runs the unit tests
+- builds the native macOS `.app`
+- packages `dist/Kanban Metrics.dmg`
+- publishes a GitHub Release with the DMG attached
+
 ## Test
 
 ```bash
