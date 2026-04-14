@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kanban Metrics</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Local-first Jira analytics</p>
+          <h1>Kanban metrics dashboard</h1>
+          <p class="lede">
+            Configure Jira scope, sync issue history, and inspect cycle time,
+            phase ratio, throughput, and CFD without shipping your data
+            anywhere else.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <p>Flow health starter</p>
+          <ul>
+            <li>Cycle time from active work to done</li>
+            <li>Phase ratio across mapped workflow columns</li>
+            <li>Monthly throughput by completion date</li>
+            <li>Board-shaped cumulative flow diagram</li>
+          </ul>
+        </div>
+      </header>
+
+      <nav class="tab-strip" aria-label="Primary">
+        <button class="tab-button is-active" data-tab-button="dashboard" type="button">Dashboard</button>
+        <button class="tab-button" data-tab-button="configuration" type="button">Configuration</button>
+      </nav>
+
+      <main class="tab-panels">
+        <section class="tab-panel is-active" data-tab-panel="dashboard">
+          <section class="panel dashboard">
+            <div class="panel-header">
+              <div>
+                <p class="kicker">Dashboard</p>
+                <h2>Saved configs and metrics</h2>
+              </div>
+              <div class="toolbar">
+                <button id="new-config-dashboard" class="button" type="button">New configuration</button>
+                <button id="open-configuration" class="button button-secondary" type="button">Open wizard</button>
+                <button id="refresh-data" class="button button-ghost">Refresh</button>
+              </div>
+            </div>
+
+            <div id="config-list" class="config-list"></div>
+
+            <section class="dashboard-filters">
+              <div>
+                <p class="metric-label">Date range</p>
+                <p class="metric-detail">Applies to all charts on this dashboard.</p>
+              </div>
+              <div class="dashboard-filter-controls">
+                <label class="compact-control">
+                  <span>Date from</span>
+                  <input id="cycle-x-start" type="date">
+                </label>
+                <label class="compact-control">
+                  <span>Date to</span>
+                  <input id="cycle-x-end" type="date">
+                </label>
+              </div>
+              <p id="cycle-controls-error" class="metric-detail metric-error" hidden></p>
+            </section>
+
+            <div class="metric-grid">
+              <article class="metric-card wide-card">
+                <div class="metric-label-row">
+                  <p class="metric-label">Cycle time</p>
+                  <div class="info-badge" tabindex="0" aria-label="Cycle time chart help">
+                    <span>i</span>
+                    <div class="info-popover" role="tooltip">
+                      <p>Предварительное условие: загружены все задачи для оценки.</p>
+                      <p>1. Сначала выбери диапазон дат</p>
+                      <p>2. Нажми fit view для того — график подстроится под все задачи в диапазоне</p>
+                    </div>
+                  </div>
+                </div>
+                <p id="cycle-detail" class="metric-detail">Sync a config to compute percentiles.</p>
+                <div class="chart-controls chart-controls-compact">
+                  <label class="compact-control">
+                    <span>Y max (days)</span>
+                    <input id="cycle-y-max" type="number" min="0.1" step="0.1" placeholder="Auto">
+                  </label>
+                  <div class="chart-control-actions">
+                    <button id="cycle-fit-p95" class="button button-ghost button-small" type="button">Fit view</button>
+                    <button id="cycle-show-all" class="button button-ghost button-small" type="button">Show all</button>
+                  </div>
+                </div>
+                <div id="cycle-hidden-controls" class="hidden-issues-bar" hidden>
+                  <span id="cycle-hidden-count" class="hidden-issues-count">0 tasks hidden</span>
+                  <button id="cycle-reset-hidden" class="button button-ghost button-small" type="button">Reset hidden</button>
+                </div>
+                <div id="cycle-trend-chart" class="chart-shell"></div>
+                <div id="cycle-percentiles" class="cycle-percentiles">
+                  <p class="metric-detail">Percentiles will appear when the chart has visible issues.</p>
+                </div>
+                <div id="cycle-context-menu" class="chart-context-menu" hidden>
+                  <button id="cycle-hide-point" class="chart-context-menu-button" type="button">Hide</button>
+                </div>
+                <div id="cycle-tooltip" class="chart-tooltip" hidden></div>
+              </article>
+
+              <article class="metric-card wide-card">
+                <div class="metric-label-row">
+                  <p class="metric-label">Phase / status time mix</p>
+                  <div class="info-badge" tabindex="0" aria-label="Phase / status time mix help">
+                    <span>i</span>
+                    <div class="info-popover" role="tooltip">
+                      <p>Это секция со средним временем нахождения задач в каждом статусе внутри Cycle time.</p>
+                      <p>В неё попадают только статусы, которые лежат в рабочем участке workflow от стартовых статусов цикла до Done, при этом сами статусы из Done statuses исключаются.</p>
+                      <p>Дни считаются по истории переходов задач: для каждой задачи берётся точное время между переходами по статусам внутри окна Cycle time, затем по каждому статусу считается среднее значение по задачам из выбранного диапазона дат.</p>
+                      <p>Цвета рассчитываются относительно текущего списка статусов: близкие к типичным значения подсвечиваются зелёным, более высокие уходят в жёлтый, а самые выбивающиеся большие значения становятся красными.</p>
+                    </div>
+                  </div>
+                </div>
+                <p id="phase-status-detail" class="metric-detail">Average time in each cycle status for issues from the selected date range.</p>
+                <div id="phase-status-summary" class="table-shell"></div>
+              </article>
+
+              <article class="metric-card wide-card">
+                <p class="metric-label">Throughput</p>
+                <h3 id="throughput-summary">No data yet</h3>
+                <p id="throughput-detail" class="metric-detail">Completed task counts by time interval will appear here.</p>
+                <div class="segmented-control" role="group" aria-label="Throughput interval">
+                  <button class="segmented-button is-active" data-throughput-interval="month" type="button">Months</button>
+                  <button class="segmented-button" data-throughput-interval="week" type="button">Weeks</button>
+                </div>
+                <div id="throughput-chart" class="chart-shell"></div>
+                <div id="throughput-tooltip" class="chart-tooltip" hidden></div>
+              </article>
+
+              <article class="metric-card wide-card">
+                <p class="metric-label">CFD snapshot</p>
+                <p id="cfd-detail" class="metric-detail">Daily end-of-day counts per configured workflow lane, stacked as a cumulative flow chart.</p>
+                <div id="cfd-legend" class="chart-legend"></div>
+                <div id="cfd-hidden-controls" class="hidden-issues-bar" hidden>
+                  <span id="cfd-hidden-count" class="hidden-issues-count">0 statuses hidden</span>
+                  <button id="cfd-reset-hidden" class="button button-ghost button-small" type="button">Reset hidden</button>
+                </div>
+                <div id="cfd-chart" class="chart-shell"></div>
+                <div id="cfd-context-menu" class="chart-context-menu" hidden>
+                  <button id="cfd-hide-status" class="chart-context-menu-button" type="button">Hide</button>
+                </div>
+              </article>
+
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="configuration">
+          <section class="panel wizard">
+            <div class="panel-header">
+              <div>
+                <p class="kicker">Configuration wizard</p>
+                <h2>Create a data source</h2>
+              </div>
+              <div class="toolbar">
+                <button id="new-config" class="button" type="button">New configuration</button>
+                <button id="load-demo" class="button button-secondary">Load demo</button>
+              </div>
+            </div>
+
+            <ol class="wizard-steps">
+              <li><strong>1.</strong> Test connection</li>
+              <li><strong>2.</strong> Validate JQL</li>
+              <li><strong>3.</strong> Load statuses</li>
+              <li><strong>4.</strong> Sync issues</li>
+            </ol>
+
+            <form id="config-form" class="config-form">
+              <section class="config-section">
+                <div class="config-section-header">
+                  <div>
+                    <p class="kicker">Credentials configuration</p>
+                    <h3>Connect to Jira</h3>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label>
+                    <span>Name</span>
+                    <input name="name" type="text" value="Default workspace">
+                  </label>
+
+                  <label>
+                    <span>Jira base URL</span>
+                    <input name="jira_base_url" type="url" placeholder="https://workspace.atlassian.net">
+                  </label>
+
+                  <label class="wide">
+                    <span>Personal access token</span>
+                    <input name="secret" type="password" placeholder="Saved on this device">
+                  </label>
+                </div>
+                <div class="section-actions">
+                  <button id="test-connection" class="button button-secondary" type="button">1. Test connection</button>
+                </div>
+              </section>
+
+              <section class="config-section">
+                <div class="config-section-header">
+                  <div>
+                    <p class="kicker">JQL configuration</p>
+                    <h3>Define issue scope</h3>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label>
+                    <span>Project key</span>
+                    <select name="project_keys" id="project-keys">
+                      <option value="">Load projects from Jira</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Issue types</span>
+                    <input name="issue_types" type="text" placeholder="Story, Bug, Task">
+                  </label>
+
+                  <label>
+                    <span>Date from</span>
+                    <input name="sync_start_date" type="date">
+                  </label>
+
+                  <label>
+                    <span>Date to</span>
+                    <input name="sync_end_date" type="date">
+                  </label>
+
+                  <label class="wide">
+                    <span>Generated JQL</span>
+                    <textarea name="base_jql" rows="4" placeholder="project = KMETRICS AND issuetype in (Story, Bug)" readonly></textarea>
+                  </label>
+
+                  <label class="wide">
+                    <span>Extra JQL</span>
+                    <textarea name="extra_jql" rows="2" placeholder="issuetype in (Story, Bug)"></textarea>
+                  </label>
+                </div>
+                <div class="section-actions">
+                  <button id="validate-jql" class="button button-secondary" type="button">2. Validate JQL</button>
+                </div>
+              </section>
+
+              <section class="config-section">
+                <div class="config-section-header">
+                  <div>
+                    <p class="kicker">Statuses configuration</p>
+                    <h3>Map workflow statuses</h3>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <label>
+                    <span>Fallback days</span>
+                    <input name="date_range_days" type="number" value="90" min="7">
+                  </label>
+
+                  <label>
+                    <span>Status buckets</span>
+                    <p class="metric-detail">Load statuses from the selected Jira project and issue types, then drag them between inactive, active, and done.</p>
+                  </label>
+
+                  <label>
+                    <span>Attribution</span>
+                    <select name="attribution_mode">
+                      <option value="assignee_at_done">Assignee at completion</option>
+                      <option value="transition_author">Transition author</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="section-actions">
+                  <button id="load-statuses" class="button button-secondary" type="button">3. Load statuses</button>
+                </div>
+
+                <input name="start_status_ids" type="hidden" value="in-progress">
+                <input name="done_status_ids" type="hidden" value="done">
+                <input name="active_status_ids" type="hidden" value="in-progress,review,qa">
+
+                <div id="mapping-preview" class="mapping-preview">
+                  <p class="metric-detail">Statuses from the selected Jira project and issue types will appear here after loading them from Jira.</p>
+                </div>
+              </section>
+
+              <div class="actions">
+                <button type="submit" class="button button-secondary">Save draft</button>
+                <button type="button" id="sync-config" class="button">4. Sync issues</button>
+              </div>
+
+              <section id="sync-status-panel" class="sync-status-panel" data-state="idle" aria-live="polite">
+                <div class="sync-status-header">
+                  <div>
+                    <p class="kicker">Sync progress</p>
+                    <h3 id="sync-status-title">No sync running</h3>
+                  </div>
+                  <span id="sync-status-badge" class="sync-status-badge">Idle</span>
+                </div>
+
+                <div class="sync-progress-track" aria-hidden="true">
+                  <div id="sync-progress-bar" class="sync-progress-bar"></div>
+                </div>
+
+                <div class="sync-progress-meta">
+                  <span id="sync-progress-value">0%</span>
+                  <span id="sync-progress-message" class="metric-detail">Start step 4 to load issues from Jira.</span>
+                </div>
+
+                <p id="sync-progress-help" class="metric-detail">The dashboard will refresh automatically when sync finishes.</p>
+
+                <div id="sync-failure-help" class="sync-failure-help" hidden>
+                  <p class="metric-label">What to check next</p>
+                  <ul id="sync-failure-list"></ul>
+                </div>
+              </section>
+            </form>
+
+            <pre id="status-box" class="status-box">Ready.</pre>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js" defer></script>
+  </body>
+  </html>

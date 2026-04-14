@@ -1,0 +1,10 @@
+.pytest_cache/
+__pycache__/
+*.pyc
+*.db
+*.sqlite3
+*.log
+.DS_Store
+.local/
+dist/
+build/

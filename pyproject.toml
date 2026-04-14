@@ -1,0 +1,9 @@
+[project]
+name = "kanban-metrics"
+version = "0.1.0"
+description = "Local Jira Kanban metrics dashboard"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
