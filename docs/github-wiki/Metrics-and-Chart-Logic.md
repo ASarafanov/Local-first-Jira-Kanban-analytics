@@ -1,5 +1,7 @@
 # Metrics and Chart Logic
 
+[Home](Home.md)
+
 ## Overview
 
 The project exposes four metric groups:

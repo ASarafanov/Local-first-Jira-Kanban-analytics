@@ -12,15 +12,15 @@ The repository contains a local-first analytics app that:
 - optionally wraps the dashboard in a native macOS window
 - calculates cycle time, throughput, phase ratio, and CFD
 
-The detailed AI-friendly project map still lives in the repository under [`docs/IMPLEMENTATION_AI.md`](https://github.com/ASarafanov/Local-first-Jira-Kanban-analytics/blob/main/docs/IMPLEMENTATION_AI.md).
+The detailed AI-friendly project map still lives in the repository under [`docs/IMPLEMENTATION_AI.md`](../IMPLEMENTATION_AI.md).
 
 ## Wiki Index
 
-- [Architecture](Architecture)
-- [Data Model and Persistence](Data-Model-and-Persistence)
-- [Jira Sync and HTTP API](Jira-Sync-and-HTTP-API)
-- [Metrics and Chart Logic](Metrics-and-Chart-Logic)
-- [Development History and Packaging](Development-History-and-Packaging)
+- [Architecture](Architecture.md)
+- [Data Model and Persistence](Data-Model-and-Persistence.md)
+- [Jira Sync and HTTP API](Jira-Sync-and-HTTP-API.md)
+- [Metrics and Chart Logic](Metrics-and-Chart-Logic.md)
+- [Development History and Packaging](Development-History-and-Packaging.md)
 
 ## Design Summary
 

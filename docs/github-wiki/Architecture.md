@@ -1,5 +1,7 @@
 # Architecture
 
+[Home](Home.md)
+
 ## Overview
 
 The project is organized as a compact local application with a clear separation between:

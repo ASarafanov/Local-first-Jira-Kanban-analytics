@@ -1,5 +1,7 @@
 # Data Model and Persistence
 
+[Home](Home.md)
+
 ## Domain Model
 
 The project uses explicit dataclasses in `kanban_metrics/models.py`.

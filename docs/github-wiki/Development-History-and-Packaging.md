@@ -1,5 +1,7 @@
 # Development History and Packaging
 
+[Home](Home.md)
+
 ## Git History Summary
 
 The visible local history shows four main stages.
