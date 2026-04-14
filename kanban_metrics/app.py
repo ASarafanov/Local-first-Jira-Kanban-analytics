@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import socket
+import time
+import webbrowser
 from dataclasses import asdict
 from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Thread
 from urllib.parse import parse_qs, urlparse
 from uuid import uuid4
 
@@ -19,15 +23,16 @@ from .jira import (
     board_mapping_from_project_statuses,
 )
 from .models import BoardColumn, BoardMapping, SyncConfig
+from .paths import APP_NAME, resource_root, user_data_dir
 from .runtime_store import RuntimeStore
 from .service import DashboardService, JobManager
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-STATIC_DIR = BASE_DIR / "kanban_metrics" / "static"
-DATA_DIR = BASE_DIR / ".local"
+RESOURCE_ROOT = resource_root()
+STATIC_DIR = RESOURCE_ROOT / "kanban_metrics" / "static"
+DATA_DIR = user_data_dir()
 DATABASE_PATH = DATA_DIR / "kanban_metrics.db"
-SCHEMA_PATH = BASE_DIR / "kanban_metrics" / "schema.sql"
+SCHEMA_PATH = RESOURCE_ROOT / "kanban_metrics" / "schema.sql"
 RUNTIME_STORE_PATH = DATA_DIR / "runtime-store.json"
 
 
@@ -43,6 +48,11 @@ service = DashboardService(
     JobManager(job_repository, issue_repository, runtime_store),
     runtime_store,
 )
+
+
+class KanbanMetricsHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address = True
+    daemon_threads = True
 
 
 def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: dict | list) -> None:
@@ -378,7 +388,68 @@ def payload_to_config(payload: dict) -> SyncConfig:
     )
 
 
-def run(host: str = "127.0.0.1", port: int = 8765) -> None:
-    server = ThreadingHTTPServer((host, port), AppHandler)
-    print(f"Kanban Metrics running on http://{host}:{port}")
+def _server_url(host: str, port: int) -> str:
+    return f"http://{host}:{port}"
+
+
+def _is_server_listening(host: str, port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.settimeout(0.2)
+        return probe.connect_ex((host, port)) == 0
+
+
+def _open_browser_when_ready(host: str, port: int) -> None:
+    for _ in range(50):
+        if _is_server_listening(host, port):
+            webbrowser.open(_server_url(host, port))
+            return
+        time.sleep(0.1)
+
+
+def create_server(host: str = "127.0.0.1", port: int = 8765) -> KanbanMetricsHTTPServer:
+    return KanbanMetricsHTTPServer((host, port), AppHandler)
+
+
+def start_server_in_thread(server: ThreadingHTTPServer) -> Thread:
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return thread
+
+
+def stop_server(server: ThreadingHTTPServer, thread: Thread | None = None) -> None:
+    try:
+        server.shutdown()
+    except Exception:
+        pass
+    try:
+        server.server_close()
+    except Exception:
+        pass
+    if thread is not None:
+        try:
+            thread.join(timeout=2)
+        except Exception:
+            pass
+
+
+def wait_until_server_ready(host: str, port: int, *, timeout_seconds: float = 5.0) -> bool:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        if _is_server_listening(host, port):
+            return True
+        time.sleep(0.1)
+    return False
+
+
+def run(host: str = "127.0.0.1", port: int = 8765, *, open_browser: bool = False) -> None:
+    if _is_server_listening(host, port):
+        if open_browser:
+            webbrowser.open(_server_url(host, port))
+        print(f"{APP_NAME} already running on {_server_url(host, port)}")
+        return
+
+    server = create_server(host, port)
+    if open_browser:
+        Thread(target=_open_browser_when_ready, args=(host, port), daemon=True).start()
+    print(f"{APP_NAME} running on {_server_url(host, port)}")
     server.serve_forever()

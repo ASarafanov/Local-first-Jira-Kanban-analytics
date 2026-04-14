@@ -6,5 +6,8 @@ __pycache__/
 *.log
 .DS_Store
 .local/
+.pyinstaller-config/
+.venv-build/
+assets/app_icon.iconset/
 dist/
 build/
