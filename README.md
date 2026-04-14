@@ -1,10 +1,10 @@
-# Kanban Metrics
+# Local-first Jira Kanban analytics
 
-Local-first dashboard for Jira Kanban metrics.
+Configure Jira scope, sync issue history, and inspect cycle time, phase ratio, throughput, and CFD without shipping your data anywhere else.
 
 ## Current state
 
-This repository now contains a runnable Python foundation with:
+This repository contains a runnable Python foundation with:
 
 - a local HTTP server
 - SQLite schema and repositories
