@@ -35,4 +35,5 @@ jobs:
         with:
           files: |
             dist/Kanban Metrics.dmg
+            dist/How to Open on macOS.png
           generate_release_notes: true

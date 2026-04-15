@@ -16,6 +16,7 @@ python3 -m venv "$VENV_DIR"
 
 rm -rf "$ICONSET_DIR"
 "$VENV_DIR/bin/python" "$ROOT_DIR/scripts/generate_app_icon.py"
+"$VENV_DIR/bin/python" "$ROOT_DIR/scripts/generate_macos_open_anyway_guide.py"
 /usr/bin/iconutil -c icns "$ICONSET_DIR" -o "$ICON_PATH"
 
 export PYINSTALLER_CONFIG_DIR
