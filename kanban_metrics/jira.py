@@ -164,6 +164,13 @@ class JiraClient:
                     break
             return all_issues
 
+    def search_result_count(self, jql: str) -> int:
+        try:
+            data = self._request("GET", f"/rest/api/2/search?jql={parse.quote(jql)}&maxResults=0")
+            return int(data.get("total", 0))
+        except JiraClientError:
+            return len(self.enhanced_search(jql, fields=["key"], max_results=100))
+
     def bulk_fetch_changelogs(self, issue_ids: list[str]) -> dict[str, Any]:
         try:
             return self._request(
@@ -533,7 +540,7 @@ class JiraSyncService:
         if start_date is not None:
             clauses.append(f'updated >= "{start_date.isoformat()}"')
         if end_date is not None:
-            clauses.append(f'updated < "{(end_date + timedelta(days=1)).isoformat()}"')
+            clauses.append(f'created < "{(end_date + timedelta(days=1)).isoformat()}"')
         return " AND ".join(clause for clause in clauses if clause)
 
     def build_effective_jql(self, config: SyncConfig) -> str:

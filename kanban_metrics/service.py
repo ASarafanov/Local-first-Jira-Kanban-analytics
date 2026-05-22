@@ -100,7 +100,10 @@ class JobManager:
             job.progress = 1.0
             job.status = "completed"
             job.finished_at = datetime.now(UTC)
-            job.message = "Synchronization finished"
+            if issues:
+                job.message = f"Synchronization finished: {len(issues)} issues fetched"
+            else:
+                job.message = "Synchronization finished: 0 issues fetched. Check project, issue type, date range, and extra JQL filters."
             self.job_repository.upsert(job)
         except Exception as exc:  # pragma: no cover - defensive path
             job.status = "failed"

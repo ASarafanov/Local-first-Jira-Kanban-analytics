@@ -195,6 +195,7 @@ class AppHandler(BaseHTTPRequestHandler):
                 parsed = client.validate_jql(jql)
                 cleaned = client.pdcleaner(jql)
                 cleaned_queries = cleaned.get("queryStrings") or cleaned.get("queries") or []
+                match_count = client.search_result_count(jql)
                 _json_response(
                     self,
                     HTTPStatus.OK,
@@ -202,6 +203,7 @@ class AppHandler(BaseHTTPRequestHandler):
                         "ok": True,
                         "parsed": parsed,
                         "cleanedJql": cleaned_queries[0] if cleaned_queries else jql,
+                        "matchCount": match_count,
                     },
                 )
             except JiraClientError as exc:

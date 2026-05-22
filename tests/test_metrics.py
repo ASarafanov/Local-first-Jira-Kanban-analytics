@@ -396,7 +396,7 @@ class MetricsTests(unittest.TestCase):
         jql = JiraSyncService.build_query_from_filters(config)
         self.assertEqual(
             jql,
-            'project in ("KM", "OPS") AND issuetype in ("Story", "Bug") AND updated >= "2026-03-01" AND updated < "2026-04-01"',
+            'project in ("KM", "OPS") AND issuetype in ("Story", "Bug") AND updated >= "2026-03-01" AND created < "2026-04-01"',
         )
         effective = JiraSyncService(client=None).build_effective_jql(config)  # type: ignore[arg-type]
         self.assertIn("(priority = High)", effective)

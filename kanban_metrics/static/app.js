@@ -561,7 +561,7 @@ function buildGeneratedBaseJql(payload) {
     clauses.push(`updated >= "${payload.sync_start_date}"`);
   }
   if (payload.sync_end_date) {
-    clauses.push(`updated < "${addDaysToIsoDate(payload.sync_end_date, 1)}"`);
+    clauses.push(`created < "${addDaysToIsoDate(payload.sync_end_date, 1)}"`);
   }
   return clauses.join(" AND ");
 }
@@ -774,7 +774,14 @@ async function validateJql() {
   if (result.cleanedJql && result.cleanedJql !== jql) {
     form.elements.base_jql.value = result.cleanedJql;
   }
-  writeStatus("JQL validation succeeded.", result);
+  const matchCount = Number.isInteger(result.matchCount) ? result.matchCount : null;
+  const matchText =
+    matchCount === null
+      ? "JQL validation succeeded."
+      : matchCount === 0
+        ? "JQL validation succeeded, but it matched 0 tasks."
+        : `JQL validation succeeded and matched ${formatTaskCount(matchCount)}.`;
+  writeStatus(matchText, result);
 }
 
 async function loadProjectStatuses() {
