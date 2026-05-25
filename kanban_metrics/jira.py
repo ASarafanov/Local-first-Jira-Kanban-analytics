@@ -538,9 +538,9 @@ class JiraSyncService:
         start_date = cls._parse_iso_date(config.sync_start_date)
         end_date = cls._parse_iso_date(config.sync_end_date)
         if start_date is not None:
-            clauses.append(f'updated >= "{start_date.isoformat()}"')
+            clauses.append(f'resolved >= "{start_date.isoformat()}"')
         if end_date is not None:
-            clauses.append(f'created < "{(end_date + timedelta(days=1)).isoformat()}"')
+            clauses.append(f'resolved < "{(end_date + timedelta(days=1)).isoformat()}"')
         return " AND ".join(clause for clause in clauses if clause)
 
     def build_effective_jql(self, config: SyncConfig) -> str:

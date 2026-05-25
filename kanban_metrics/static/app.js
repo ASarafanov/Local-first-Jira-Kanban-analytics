@@ -558,10 +558,10 @@ function buildGeneratedBaseJql(payload) {
   ].filter(Boolean);
 
   if (payload.sync_start_date) {
-    clauses.push(`updated >= "${payload.sync_start_date}"`);
+    clauses.push(`resolved >= "${payload.sync_start_date}"`);
   }
   if (payload.sync_end_date) {
-    clauses.push(`created < "${addDaysToIsoDate(payload.sync_end_date, 1)}"`);
+    clauses.push(`resolved < "${addDaysToIsoDate(payload.sync_end_date, 1)}"`);
   }
   return clauses.join(" AND ");
 }
