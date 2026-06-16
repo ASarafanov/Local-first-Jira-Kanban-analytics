@@ -1764,6 +1764,7 @@ function aggregateCycleStatusSummary(details) {
   return statusOrder.map(({ name }) => {
     let totalSeconds = 0;
     let issueCount = 0;
+    const secondsValues = [];
 
     details.forEach((detail) => {
       const statusData = detail.statuses?.[name];
@@ -1772,12 +1773,17 @@ function aggregateCycleStatusSummary(details) {
       }
       totalSeconds += statusData.seconds || 0;
       issueCount += 1;
+      secondsValues.push(statusData.seconds || 0);
     });
+
+    const sortedSeconds = [...secondsValues].sort((a, b) => a - b);
 
     return {
       status: name,
       issueCount,
       averageDays: issueCount ? totalSeconds / issueCount / 86400 : 0,
+      p50Days: issueCount ? (percentileValue(sortedSeconds, 0.5) ?? 0) / 86400 : null,
+      p95Days: issueCount ? (percentileValue(sortedSeconds, 0.95) ?? 0) / 86400 : null,
     };
   });
 }
@@ -2101,8 +2107,12 @@ function renderPhaseRatio(data) {
     (row) => `
       <div class="table-row">
         <div><strong>${row.status}</strong><span>${row.issueCount} issue${row.issueCount === 1 ? "" : "s"}</span></div>
-        <div class="status-days-value" style="color: ${escapeHtml(colorForStatusAverageDays(statusSummary, row))}">${row.averageDays.toFixed(2)} d</div>
-        <div>average in status</div>
+        <div class="status-values-group">
+          <span class="status-days-value" style="color: ${escapeHtml(colorForStatusAverageDays(statusSummary, row))}">${row.averageDays.toFixed(2)} d</span>
+          ${row.p50Days != null ? `<span class="status-percentile-badge"><span class="status-percentile-label">P50</span> ${escapeHtml(formatDuration(row.p50Days * 24))}</span>` : ""}
+          ${row.p95Days != null ? `<span class="status-percentile-badge"><span class="status-percentile-label">P95</span> ${escapeHtml(formatDuration(row.p95Days * 24))}</span>` : ""}
+        </div>
+        <div class="metric-detail">avg · P50 · P95</div>
       </div>
     `,
     "No cycle status data in the selected date range."

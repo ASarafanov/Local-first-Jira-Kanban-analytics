@@ -993,6 +993,26 @@ textarea {
   font-weight: 700;
 }
 
+.status-values-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.status-percentile-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.status-percentile-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
 .phase-list,
 .cfd-list {
   display: grid;
